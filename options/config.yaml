@@ -1,0 +1,9 @@
+runtime:
+  eval_frqe: 1
+
+hydra:
+  run:
+    dir: ./
+
+defaults:
+  - model: con
