@@ -27,8 +27,8 @@ continue_train: False
 epoch: 0
 verbose: 
 pretrained_name: None
-checkpoints_dir: /home/zwl/workspace/con_shadow/checkpoint/gan
-save_dir: /home/zwl/workspace/con_shadow/result/gan
+checkpoints_dir: /home/zwl/workspace/shadow_remove/checkpoint/gan
+save_dir: /home/zwl/workspace/shadow_remove/result/gan
 
 lr_policy: 'linear'
 epoch_count: 1
@@ -42,7 +42,7 @@ testset:
   batch_size: 1
   num_threads: 0
   shuffle: false
-  dataroot: /home/zwl/workspace/con_shadow/datasets/srd
+  dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
   phase: test
   max_dataset_size: 100
   use_mask: false
@@ -54,8 +54,8 @@ trainset:
   batch_size: 24
   num_threads: 0
   shuffle: false
-  dataroot: /home/zwl/workspace/con_shadow/datasets/srd
+  dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
   phase: train
-  max_dataset_size: 200
+  max_dataset_size: 2000
   use_mask: False
   loadsize: 256
