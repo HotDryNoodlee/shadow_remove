@@ -1,0 +1,61 @@
+model:
+  model_name: gan
+  gpu_ids:
+  - 0
+  - 1
+  - 2
+  - 3
+  lr: 0.0002
+  beta1: 0.5
+  beta2: 0.999
+  direction: StoF
+  input_nc: 3
+  output_nc: 3
+  no_dropout: true
+  init_type: xavier
+  init_gain: 0.02
+  no_antialias: false
+  no_antialias_up: false
+  ngf: 64
+  netG: gan_9blocks
+  normG: instance
+  ndf: 64
+  netD: basic
+  n_layers_D: 3
+  normD: instance
+  isTrain: true
+  continue_train: false
+  epoch: 0
+  verbose: null
+  pretrained_name: None
+  checkpoints_dir: /home/zwl/workspace/con_shadow/checkpoint/gan
+  save_dir: /home/zwl/workspace/con_shadow/result/gan
+  lr_policy: linear
+  epoch_count: 1
+  n_epoch: 50
+  n_epoch_decay: 150
+  lr_decay_iters: 5
+  testset:
+    dataset_name: gan
+    isTrain: false
+    batch_size: 1
+    num_threads: 0
+    shuffle: false
+    dataroot: /home/zwl/workspace/con_shadow/datasets/srd
+    phase: test
+    max_dataset_size: 100
+    use_mask: false
+    loadsize: 256
+  trainset:
+    dataset_name: gan
+    isTrain: true
+    batch_size: 24
+    num_threads: 0
+    shuffle: false
+    dataroot: /home/zwl/workspace/con_shadow/datasets/srd
+    phase: train
+    max_dataset_size: 200
+    use_mask: false
+    loadsize: 256
+runtime:
+  eval_frqe: 1
