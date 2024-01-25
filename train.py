@@ -55,10 +55,10 @@ def train(opt):
                 psnr.append(PSNR(images["fake_F"], images["real_F"]))
             mean_ssim = mean(ssim)
             mean_psnr = mean(psnr)
-            max_psnr = mean_psnr
-            max_ssim = mean_ssim
-            output.append({"epoch": epoch, 'psnr': max_psnr, 'ssim': max_ssim})
+            output.append({"epoch": epoch, 'psnr': mean_psnr, 'ssim': mean_ssim})
             if mean_psnr > max_psnr and mean_ssim > max_ssim:
+                max_psnr = mean_psnr
+                max_ssim = mean_ssim
                 model.save_networks(epoch)
                 model.save_current_images(epoch)
         # import pdb;pdb.set_trace()
