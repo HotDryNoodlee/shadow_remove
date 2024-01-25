@@ -24,16 +24,13 @@ def train(opt):
     test_dataset = create_dataset(opt.model.testset)
     model = create_model(opt.model)
     loss_dict = {name: [] for name in model.loss_names}
-    total_iters = 0
 
 
     for epoch in range(opt.model.epoch_count, opt.model.n_epoch + opt.model.n_epoch_decay + 1):
         model.train()
         train_dataset.set_epoch(epoch)
-        # for i, data in tqdm(enumerate(train_dataset), total=len(train_dataset)/opt.model.trainset.batch_size):
-        for i, data in enumerate(train_dataset):
-            batch_size = data["S"].size(0)
-            total_iters += batch_size
+        for i, data in tqdm(enumerate(train_dataset), total=len(train_dataset)/opt.model.trainset.batch_size):
+        # for i, data in enumerate(train_dataset):
             if epoch == opt.model.epoch_count and i == 0:
                 if opt.model.model_name == "con":
                     model.data_dependent_initialize(data)
@@ -58,10 +55,10 @@ def train(opt):
                 psnr.append(PSNR(images["fake_F"], images["real_F"]))
             mean_ssim = mean(ssim)
             mean_psnr = mean(psnr)
+            max_psnr = mean_psnr
+            max_ssim = mean_ssim
+            output.append({"epoch": epoch, 'psnr': max_psnr, 'ssim': max_ssim})
             if mean_psnr > max_psnr and mean_ssim > max_ssim:
-                max_psnr = mean_psnr
-                max_ssim = mean_ssim
-                output.append({"epoch": epoch, 'psnr': max_psnr, 'ssim': max_ssim})
                 model.save_networks(epoch)
                 model.save_current_images(epoch)
         # import pdb;pdb.set_trace()
