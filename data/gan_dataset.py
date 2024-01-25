@@ -44,19 +44,33 @@ class ganDataset(BaseDataset):
                 self.F_size = len(self.F_paths)  # get the size of dataset B
         
         if self.opt.phase == "test":
-            self.dir_S = os.path.join(self.opt.dataroot, "valS")
-            self.dir_F = os.path.join(self.opt.dataroot, "valF")
+            if self.opt.use_mask:
+                self.dir_S = os.path.join(self.opt.dataroot, "valS")
+                self.dir_F = os.path.join(self.opt.dataroot, "valF")
+                self.dir_M = os.path.join(self.opt.dataroot, 'valM')
 
-            self.S_paths = sorted(make_dataset(self.dir_S, self.opt.max_dataset_size))   # load images from '/path/to/data/testA'
-            self.F_paths = sorted(make_dataset(self.dir_F, self.opt.max_dataset_size))    # load images from '/path/to/data/testB'
+                self.S_paths = sorted(make_dataset(self.dir_S, self.opt.max_dataset_size))   # load images from '/path/to/data/testA'
+                self.F_paths = sorted(make_dataset(self.dir_F, self.opt.max_dataset_size))    # load images from '/path/to/data/testB'
+                self.M_paths = sorted(make_dataset(self.dir_M, self.opt.max_dataset_size))
 
+                self.S_size = len(self.S_paths)  # get the size of dataset A
+                self.F_size = len(self.F_paths)  # get the size of dataset B
+                self.M_size = len(self.M_paths)
+            
+            else:
+                self.dir_S = os.path.join(self.opt.dataroot, "valS")
+                self.dir_F = os.path.join(self.opt.dataroot, "valF")
 
-            self.S_size = len(self.S_paths)  # get the size of dataset A
-            self.F_size = len(self.F_paths)  # get the size of dataset B
+                self.S_paths = sorted(make_dataset(self.dir_S, self.opt.max_dataset_size))   # load images from '/path/to/data/testA'
+                self.F_paths = sorted(make_dataset(self.dir_F, self.opt.max_dataset_size))    # load images from '/path/to/data/testB'
+
+                self.S_size = len(self.S_paths)  # get the size of dataset A
+                self.F_size = len(self.F_paths)  # get the size of dataset B
+
 
     def __getitem__(self, index):
 
-        if self.opt.phase == "train" and self.opt.use_mask == True:
+        if self.opt.use_mask:
             S_path = self.S_paths[index % self.S_size]  # make sure index is within then range
             F_path = self.F_paths[index % self.F_size]
             M_path = self.M_paths[index % self.M_size]
@@ -105,14 +119,11 @@ class ganDataset(BaseDataset):
             S = S_img
             F = F_img
 
-
             return {'S': S, 'F': F, 'S_paths': S_path, 'F_paths': F_path}
 
     def __len__(self):
 
         return max(self.S_size, self.F_size)
-
-
 
 def make_dataset(dir, max_dataset_size=float("inf")):
     images = []
