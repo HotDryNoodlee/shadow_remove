@@ -1,0 +1,56 @@
+model_name: light
+gpu_ids: [0]
+lr: 0.0002
+beta1: 0.5
+beta2: 0.999
+direction: StoF
+
+input_nc: 4
+output_nc: 3
+no_dropout: True
+init_type: xavier # choices=['normal', 'xavier', 'kaiming', 'orthogonal']
+init_gain: 0.02
+no_antialias: False
+no_antialias_up: False
+
+netG: light_blocks
+normG: instance # choices=['instance', 'batch', 'none']
+
+
+isTrain: True
+continue_train: False
+epoch: 0
+verbose: 
+pretrained_name: None
+checkpoints_dir: /home/zwl/workspace/shadow_remove/result/light
+save_dir: /home/zwl/workspace/shadow_remove/result/light
+
+lr_policy: 'linear'
+epoch_count: 1
+n_epoch: 200
+n_epoch_decay: 200
+lr_decay_iters: 5
+
+testset:
+  dataset_name: light
+  isTrain: False
+  batch_size: 1
+  num_threads: 0
+  shuffle: true
+  dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
+  phase: test
+  max_dataset_size: 100
+  use_mask: False
+  loadsize: 256
+
+trainset:
+  dataset_name: light
+  isTrain: True
+  batch_size: 1
+  num_threads: 0
+  shuffle: true
+  dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
+  phase: train
+  max_dataset_size: 2000
+  use_mask: False
+  loadsize: 256
