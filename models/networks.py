@@ -8,18 +8,18 @@ import numpy as np
 from packaging import version
 
 
-def define_StoF(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal',
+def define_StoF(init_type='normal',
              init_gain=0.02, no_antialias=False, no_antialias_up=False, gpu_ids=[], opt=None):
     net = None
-    norm_layer = get_norm_layer(norm_type=norm)
+    norm_layer = get_norm_layer(norm_type=opt.norm)
 
-    if netG == 'gan_6blocks':
-        net = GanGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=6, opt=opt)
-    elif netG == 'resnet_6blocks':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=6, opt=opt)
-    elif netG == "light_6blocks":
+    if opt.netG == 'gan_6blocks':
+        net = GanGenerator(opt.input_nc, opt.output_nc, opt.ngf, norm_layer=norm_layer, use_dropout=opt.use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=6, opt=opt)
+    elif opt.netG == 'resnet_6blocks':
+        net = ResnetGenerator(opt.input_nc, opt.output_nc, opt.ngf, norm_layer=norm_layer, use_dropout=opt.use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=6, opt=opt)
+    elif opt.netG == "light_blocks":
         net = LightGenerator()
-    return init_net(net, init_type, init_gain, gpu_ids, initialize_weights=('stylegan2' not in netG))
+    return init_net(net, init_type, init_gain, gpu_ids, initialize_weights=('stylegan2' not in opt.netG))
 
 
 
@@ -119,8 +119,42 @@ class GanGenerator(nn.Module):
         return x
         
 
-class LightGenerator():
-    pass
+class LightGenerator(nn.Module):
+    def __init__(self):
+        # assert(n_blocks >= 0)
+        super(LightGenerator, self).__init__()
+        self.Light_net = Lightnet()
+        model = [nn.ReflectionPad2d(3), 
+                      nn.Conv2d(3, 32, 7), 
+                      LigthGuidedNormalization(32), 
+                      nn.ReLU(inplace=True)]
+        model += [nn.Conv2d(32, 64, 3, stride=2, padding=1),
+                      LigthGuidedNormalization(64), 
+                      nn.ReLU(inplace=True)]
+        self.model += [nn.Conv2d(64, 128, 3, stride=2, padding=1),
+                       LigthGuidedNormalization(128),
+                       nn.ReLU(inplace=True),]
+        for i in range(9): 
+            model += LRN_ResidualBlock(128)
+        model += [nn.ConvTranspose2d(128, 64, 3, stride=2, padding=1, output_padding=1),
+                        LigthGuidedNormalization(64),
+                        nn.ReLU(inplace=True)]
+        model += [nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1),
+                        LigthGuidedNormalization(32),
+                        nn.ReLU(inplace=True),
+                        nn.ReflectionPad2d(3),
+                        nn.Conv2d(32, 3, 7)]
+        self.model = nn.Sequential(*model)
+
+    def forward(self, x, mask):
+        Light = self.Light_net(x.detach()[:, 0, :, :].unsqueeze(1), mask)
+        out = x
+        for layer in self.model:
+            if isinstance(layer, LRN_ResidualBlock) or isinstance(layer, LigthGuidedNormalization):
+                out = layer([out, mask, Light])
+            else:
+                out = layer(out)
+        return (x+out).tanh()
 
 
 class ResnetGenerator(nn.Module):
@@ -710,3 +744,108 @@ class Normalize(nn.Module):
         norm = x.pow(self.power).sum(1, keepdim=True).pow(1. / self.power)
         out = x.div(norm + 1e-7)
         return out
+    
+
+
+class LigthGuidedNormalization(nn.Module):
+    def __init__(self, in_feature , eps=1e-5):
+        super(LigthGuidedNormalization, self).__init__()
+        self.eps = eps
+        self.conv_gamma = nn.Sequential(nn.Conv2d(128, in_feature, 1), 
+                                         nn.ReLU(inplace=False), 
+                                         nn.Conv2d(in_feature, in_feature, 1))
+        self.conv_beta = nn.Sequential(nn.Conv2d(128, in_feature, 1), 
+                                         nn.ReLU(inplace=False), 
+                                         nn.Conv2d(in_feature, in_feature, 1))
+
+    def forward(self, input):
+        x = input[0]
+        mask = input[1]
+        Light = input[2]
+        # Light = F.interpolate(Light.detach(), size=x.size()[2:], mode='nearest')
+        gamma = self.conv_gamma(Light)
+        beta = self.conv_beta(Light)
+        mask = F.interpolate(mask.detach(), size=x.size()[2:], mode='nearest')
+        mean_back, std_back = self.get_foreground_mean_std(x * (1-mask), 1 - mask) # the background features
+        normalized = (x - mean_back) / std_back
+        normalized_background = normalized * (1 - mask)
+        
+        mean_fore, std_fore = self.get_foreground_mean_std(x * mask, mask) # the background features
+        normalized = (x - mean_fore) / std_fore 
+        normalized_foreground = (normalized*gamma+beta) * mask
+        
+        return normalized_foreground + normalized_background
+    
+
+class Lightnet(nn.Module):
+    def __init__(self, in_channel=1, out_channel=128):
+        super(Lightnet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channel, out_channel//4, 1)
+        self.conv2 = nn.Conv2d(out_channel//4, out_channel//2, 1)
+        self.conv3 = nn.Conv2d(out_channel//2, out_channel, 1)
+        self.act = nn.ReLU(inplace=True)
+    def forward(self, x, mask):
+        out = self.act(self.conv1(x))
+        out = self.act(self.conv2(out))
+        out = self.act(self.conv3(out))
+        mask = F.interpolate(mask.detach(), size=out.size()[2:], mode='nearest')
+        zero = torch.zeros_like(mask)
+        one = torch.ones_like(mask)
+        mask = torch.where(mask >= 1.0, one, zero)
+        Ligth = out*(1.0-mask)
+        Ligth = torch.mean(Ligth, dim=[2, 3], keepdim=True)
+        return Ligth
+
+
+class LRN_ResidualBlock(nn.Module):
+    def __init__(self, in_features):
+        super(LRN_ResidualBlock, self).__init__()
+        self.conv_block1 = nn.Sequential(nn.ReflectionPad2d(1),
+                                         nn.Conv2d(in_features, in_features, 3),)
+        self.LRN1 = LigthGuidedNormalization(in_features)
+        self.act = nn.ReLU(inplace=True)
+        self.conv_block2 = nn.Sequential(nn.ReflectionPad2d(1),
+                                         nn.Conv2d(in_features, in_features, 3),)
+        self.LRN2 = LigthGuidedNormalization(in_features)  
+
+
+    def forward(self, input):
+        x = input[0]
+        mask = input[1]
+        Light = input[2]
+        out = self.conv_block1(x)
+        out = self.LRN1([out, mask, Light])
+        out = self.act(out)
+        out = self.conv_block2(out)
+        out = self.LRN2([out, mask, Light])
+        return x + out
+    
+class Discriminator(nn.Module):
+    def __init__(self):
+        super(Discriminator, self).__init__()
+
+        # A bunch of convolutions one after another
+        model = [   nn.Conv2d(3, 32, 4, stride=2, padding=1),
+                    nn.LeakyReLU(0.2, inplace=True) ]
+
+        model += [  nn.Conv2d(32, 64, 4, stride=2, padding=1),
+                    nn.InstanceNorm2d(64),
+                    nn.LeakyReLU(0.2, inplace=True) ]
+
+        model += [  nn.Conv2d(64, 128, 4, stride=2, padding=1),
+                    nn.InstanceNorm2d(128),
+                    nn.LeakyReLU(0.2, inplace=True) ]
+
+        model += [  nn.Conv2d(128, 256, 4, padding=1),
+                    nn.InstanceNorm2d(256),
+                    nn.LeakyReLU(0.2, inplace=True) ]
+
+        # FCN classification layer
+        model += [nn.Conv2d(256, 1, 4, padding=1)]
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self, x):
+        out =  self.model(x)
+        # Average pooling and flatten
+        return F.avg_pool2d(out, out.size()[2:]).view(out.size()[0], -1).view(x.size()[0]) #global avg pool

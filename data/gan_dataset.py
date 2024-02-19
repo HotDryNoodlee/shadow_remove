@@ -45,9 +45,9 @@ class ganDataset(BaseDataset):
         
         if self.opt.phase == "test":
             if self.opt.use_mask:
-                self.dir_S = os.path.join(self.opt.dataroot, "valS")
-                self.dir_F = os.path.join(self.opt.dataroot, "valF")
-                self.dir_M = os.path.join(self.opt.dataroot, 'valM')
+                self.dir_S = os.path.join(self.opt.dataroot, self.opt.phase + 'S')
+                self.dir_F = os.path.join(self.opt.dataroot, self.opt.phase + 'F')
+                self.dir_M = os.path.join(self.opt.dataroot, self.opt.phase + 'M')
 
                 self.S_paths = sorted(make_dataset(self.dir_S, self.opt.max_dataset_size))   # load images from '/path/to/data/testA'
                 self.F_paths = sorted(make_dataset(self.dir_F, self.opt.max_dataset_size))    # load images from '/path/to/data/testB'
@@ -58,8 +58,8 @@ class ganDataset(BaseDataset):
                 self.M_size = len(self.M_paths)
             
             else:
-                self.dir_S = os.path.join(self.opt.dataroot, "valS")
-                self.dir_F = os.path.join(self.opt.dataroot, "valF")
+                self.dir_S = os.path.join(self.opt.dataroot, self.opt.phase + 'S')
+                self.dir_F = os.path.join(self.opt.dataroot, self.opt.phase + 'F')
 
                 self.S_paths = sorted(make_dataset(self.dir_S, self.opt.max_dataset_size))   # load images from '/path/to/data/testA'
                 self.F_paths = sorted(make_dataset(self.dir_F, self.opt.max_dataset_size))    # load images from '/path/to/data/testB'
@@ -81,7 +81,13 @@ class ganDataset(BaseDataset):
 
             S_img = cv2.resize(S_img, (self.opt.loadsize, self.opt.loadsize, 3))
             F_img = cv2.resize(F_img, (self.opt.loadsize, self.opt.loadsize, 3))
-            M_img = cv2.resize(M_img, (self.opt.loadsize, self.opt.loadsize, 3))
+            M_img = cv2.resize(M_img, (self.opt.loadsize, self.opt.loadsize, 1))
+
+            M_img[M_img>0] = 1.0
+
+            S_img = np.asarray(S_img)/255
+            F_img = np.asarray(F_img)/255
+            M_img = np.asarray(M_img)
 
             S_img = torch.from_numpy(S_img.copy()).float()
             F_img = torch.from_numpy(F_img.copy()).float()
@@ -104,8 +110,8 @@ class ganDataset(BaseDataset):
             S_img = cv2.imread(S_path)
             F_img = cv2.imread(F_path)
             # import pdb;pdb.set_trace()
-            S_img = cv2.resize(S_img, (self.opt.loadsize, self.opt.loadsize))
-            F_img = cv2.resize(F_img, (self.opt.loadsize, self.opt.loadsize))
+            S_img = cv2.resize(S_img, (self.opt.loadsize, self.opt.loadsize, 3))
+            F_img = cv2.resize(F_img, (self.opt.loadsize, self.opt.loadsize, 3))
 
             S_img = np.asarray(S_img)/255
             F_img = np.asarray(F_img)/255
