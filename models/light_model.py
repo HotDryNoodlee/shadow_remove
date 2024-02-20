@@ -13,7 +13,7 @@ class LIGHTModel(BaseModel):
         # specify the training losses you want to print out.
         # The training/test scripts will call <BaseModel.get_current_losses>
         self.opt = opt
-        self.loss_names = ['R_loss', 'I_loss']
+        self.loss_names = ['i', 'g']
         self.visual_names = ["fake_F", "real_F"]
         self.model_names = ['G']
 
@@ -56,8 +56,9 @@ class LIGHTModel(BaseModel):
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.zero_mask = torch.zeros_like(self.mask, dtype=self.mask.dtype)
+        # import pdb; pdb.set_trace()
         self.fake_F = self.netG(self.real_S, self.mask)
-        self.idt_F = self.netG(self.real_F, )
+        self.idt_F = self.netG(self.real_F, self.zero_mask)
         return self.fake_F
 
     def compute_loss(self):

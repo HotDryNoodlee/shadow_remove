@@ -8,7 +8,9 @@ import importlib
 import argparse
 from argparse import Namespace
 import torchvision
-
+import cv2
+from skimage import io, color
+from skimage.transform import rescale, resize, downscale_local_mean
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -41,26 +43,39 @@ def find_class_in_module(target_cls_name, module):
     return cls
 
 
-def tensor2im(input_image, imtype=np.uint8):
-    """"Converts a Tensor array into a numpy image array.
+# def tensor2im(input_image, imtype=np.uint8):
+#     """"Converts a Tensor array into a numpy image array.
 
-    Parameters:
-        input_image (tensor) --  the input image tensor array
-        imtype (type)        --  the desired type of the converted numpy array
-    """
-    if not isinstance(input_image, np.ndarray):
-        if isinstance(input_image, torch.Tensor):  # get the data from a variable
-            image_tensor = input_image.data
-        else:
-            return input_image
-        image_numpy = image_tensor[0].clamp(-1.0, 1.0).cpu().float().numpy()  # convert it into a numpy array
-        if image_numpy.shape[0] == 1:  # grayscale to RGB
-            image_numpy = np.tile(image_numpy, (3, 1, 1))
-        image_numpy = (np.transpose(image_numpy, (1, 2, 0)))* 255.0  # post-processing: tranpose and scaling
-    else:  # if it is a numpy array, do nothing
-        image_numpy = input_image
-    return image_numpy.astype(imtype)
+#     Parameters:
+#         input_image (tensor) --  the input image tensor array
+#         imtype (type)        --  the desired type of the converted numpy array
+#     """
+#     if not isinstance(input_image, np.ndarray):
+#         if isinstance(input_image, torch.Tensor):  # get the data from a variable
+#             image_tensor = input_image.data
+#         else:
+#             return input_image
+#         image_numpy = image_tensor[0].clamp(-1.0, 1.0).cpu().float().numpy()  # convert it into a numpy array
+#         if image_numpy.shape[0] == 1:  # grayscale to RGB
+#             image_numpy = np.tile(image_numpy, (3, 1, 1))
+#         image_numpy = (np.transpose(image_numpy, (1, 2, 0)))* 255.0  # post-processing: tranpose and scaling
+#     else:  # if it is a numpy array, do nothing
+#         image_numpy = input_image
+#     return image_numpy.astype(imtype)
 
+def tensor2im(tensor):
+    labimg = tensor
+    c = labimg.size()[0]
+    h = labimg.size()[2]
+    w = labimg.size()[3]
+    labimg[:, 0, :, :] = 50.0*(labimg[:, 0, :, :]+1.0)
+    labimg[:, 1:,:] = 255.0*(labimg[:, 1:,:]+1.0)/2.0-128.0
+    labimg = labimg.cpu()
+    labimg = labimg.transpose(1, 3).transpose(1, 2).contiguous().numpy()
+    labimg = resize(labimg,(c,h,w,3))
+    labimg = labimg[0]
+    outputimag = color.lab2rgb(labimg)
+    return outputimag
 
 def diagnose_network(net, name='network'):
     """Calculate and print the mean of average absolute(gradients)

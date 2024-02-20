@@ -51,7 +51,7 @@ def train(opt):
                 model.set_input(data)
                 model.test()
                 images = model.get_current_visuals()
-                ssim.append(SSIM(images["fake_F"], images["real_F"], channel_axis=-1))
+                ssim.append(SSIM(images["fake_F"], images["real_F"], channel_axis=-1, data_range=images["fake_F"].max() - images["fake_F"].min()))
                 psnr.append(PSNR(images["fake_F"], images["real_F"]))
             mean_ssim = mean(ssim)
             mean_psnr = mean(psnr)
@@ -59,6 +59,7 @@ def train(opt):
             if mean_psnr > max_psnr and mean_ssim > max_ssim:
                 max_psnr = mean_psnr
                 max_ssim = mean_ssim
+                print("max_psnr:",  max_psnr, "max_ssim:",  max_ssim)
                 model.save_networks(epoch)
                 model.save_current_images(epoch)
         # import pdb;pdb.set_trace()

@@ -12,10 +12,10 @@ import torchvision.transforms as transforms
 from abc import ABC, abstractmethod
 import torch
 from skimage import io, color
+from skimage.transform import rescale, resize, downscale_local_mean
 import cv2
-import clo
 
-class ganDataset(BaseDataset):
+class lightDataset(BaseDataset):
     
     def __init__(self, opt):
 
@@ -76,28 +76,32 @@ class ganDataset(BaseDataset):
             F_path = self.F_paths[index % self.F_size]
             M_path = self.M_paths[index % self.M_size]
             
-            S_img = cv2.imread(S_path)
-            F_img = cv2.imread(F_path)
-            M_img = cv2.imread(M_path)
+            S_img = io.imread(S_path)
+            F_img = io.imread(F_path)
+            M_img = io.imread(M_path)
 
-            S_img = cv2.cvtColor(S_img, cv2.COLOR_BGR2LAB)
-            F_img = cv2.cvtColor(F_img, cv2.COLOR_BGR2LAB)
-
-            S_img = cv2.resize(S_img, (self.opt.loadsize, self.opt.loadsize, 3))
-            F_img = cv2.resize(F_img, (self.opt.loadsize, self.opt.loadsize, 3))
-            M_img = cv2.resize(M_img, (self.opt.loadsize, self.opt.loadsize, 1))
+            S_img = color.rgb2lab(S_img)
+            F_img = color.rgb2lab(F_img)
+            
+            # import pdb; pdb.set_trace()
+            S_img = resize(S_img, (self.opt.loadsize, self.opt.loadsize, 3))
+            F_img = resize(F_img, (self.opt.loadsize, self.opt.loadsize, 3))
+            M_img = resize(M_img, (self.opt.loadsize, self.opt.loadsize, 1))
 
             M_img[M_img>0] = 1.0
 
             S_img[:,:,0] = np.asarray(S_img[:,:,0])/50.0-1.0
-            M_img[:,:,0] = np.asarray(M_img[:,:,0])/50.0-1.0
-            S_img[:,:,1:] = 2.0*(np.asarray(F_img[:,:,1:])+128.0)/255.0-1.0
-            M_img[:,:,1:] = 2.0*(np.asarray(M_img[:,:,1:])+128.0)/255.0-1.0
-            M_img = np.asarray(M_img)
+            F_img[:,:,0] = np.asarray(F_img[:,:,0])/50.0-1.0
+            S_img[:,:,1:] = 2.0*(np.asarray(S_img[:,:,1:])+128.0)/255.0-1.0
+            F_img[:,:,1:] = 2.0*(np.asarray(F_img[:,:,1:])+128.0)/255.0-1.0
 
             S_img = torch.from_numpy(S_img.copy()).float()
             F_img = torch.from_numpy(F_img.copy()).float()
             M_img = torch.from_numpy(M_img.copy()).float()
+
+            S_img = S_img.view(self.opt.loadsize,self.opt.loadsize,3)
+            F_img = F_img.view(self.opt.loadsize,self.opt.loadsize,3)
+            M_img = M_img.view(self.opt.loadsize, self.opt.loadsize,1)
 
             S_img = S_img.transpose(0, 1).transpose(0, 2).contiguous()
             F_img = F_img.transpose(0, 1).transpose(0, 2).contiguous()
@@ -116,8 +120,8 @@ class ganDataset(BaseDataset):
             S_img = cv2.imread(S_path)
             F_img = cv2.imread(F_path)
             # import pdb;pdb.set_trace()
-            S_img = cv2.resize(S_img, (self.opt.loadsize, self.opt.loadsize, 3))
-            F_img = cv2.resize(F_img, (self.opt.loadsize, self.opt.loadsize, 3))
+            S_img = cv2.resize(S_img, (self.opt.loadsize, self.opt.loadsize))
+            F_img = cv2.resize(F_img, (self.opt.loadsize, self.opt.loadsize))
 
             S_img = np.asarray(S_img)/255
             F_img = np.asarray(F_img)/255

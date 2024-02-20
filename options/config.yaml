@@ -6,4 +6,4 @@ hydra:
     dir: ./
 
 defaults:
-  - model: con
+  - model: light

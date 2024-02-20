@@ -11,7 +11,7 @@ from packaging import version
 def define_StoF(init_type='normal',
              init_gain=0.02, no_antialias=False, no_antialias_up=False, gpu_ids=[], opt=None):
     net = None
-    norm_layer = get_norm_layer(norm_type=opt.norm)
+    norm_layer = get_norm_layer(norm_type=opt.normG)
 
     if opt.netG == 'gan_6blocks':
         net = GanGenerator(opt.input_nc, opt.output_nc, opt.ngf, norm_layer=norm_layer, use_dropout=opt.use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=6, opt=opt)
@@ -131,11 +131,11 @@ class LightGenerator(nn.Module):
         model += [nn.Conv2d(32, 64, 3, stride=2, padding=1),
                       LigthGuidedNormalization(64), 
                       nn.ReLU(inplace=True)]
-        self.model += [nn.Conv2d(64, 128, 3, stride=2, padding=1),
+        model += [nn.Conv2d(64, 128, 3, stride=2, padding=1),
                        LigthGuidedNormalization(128),
                        nn.ReLU(inplace=True),]
         for i in range(9): 
-            model += LRN_ResidualBlock(128)
+            model += [LRN_ResidualBlock(128)]
         model += [nn.ConvTranspose2d(128, 64, 3, stride=2, padding=1, output_padding=1),
                         LigthGuidedNormalization(64),
                         nn.ReLU(inplace=True)]
@@ -150,6 +150,7 @@ class LightGenerator(nn.Module):
         Light = self.Light_net(x.detach()[:, 0, :, :].unsqueeze(1), mask)
         out = x
         for layer in self.model:
+            # import pdb; pdb.set_trace()
             if isinstance(layer, LRN_ResidualBlock) or isinstance(layer, LigthGuidedNormalization):
                 out = layer([out, mask, Light])
             else:
@@ -757,6 +758,15 @@ class LigthGuidedNormalization(nn.Module):
         self.conv_beta = nn.Sequential(nn.Conv2d(128, in_feature, 1), 
                                          nn.ReLU(inplace=False), 
                                          nn.Conv2d(in_feature, in_feature, 1))
+    def get_foreground_mean_std(self, region, mask):
+        sum = torch.sum(region, dim=[2, 3])     # (B, C)
+        num = torch.sum(mask, dim=[2, 3])       # (B, C)
+        mu = sum / (num + self.eps)
+        mean = mu[:, :, None, None]
+        var = torch.sum((region + (1 - mask)*mean - mean) ** 2, dim=[2, 3]) / (num + self.eps)
+        var = var[:, :, None, None]
+        return mean, torch.sqrt(var+self.eps)
+
 
     def forward(self, input):
         x = input[0]
@@ -792,6 +802,7 @@ class Lightnet(nn.Module):
         zero = torch.zeros_like(mask)
         one = torch.ones_like(mask)
         mask = torch.where(mask >= 1.0, one, zero)
+        # import pdb; pdb.set_trace()
         Ligth = out*(1.0-mask)
         Ligth = torch.mean(Ligth, dim=[2, 3], keepdim=True)
         return Ligth

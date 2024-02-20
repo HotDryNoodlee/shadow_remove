@@ -160,6 +160,7 @@ class BaseModel(ABC):
             if isinstance(name, str):
                 image[name] = getattr(self, name)
         for key in image:
+            # import pdb; pdb.set_trace()
             image[key] = tensor2im(image[key])
         return image
 

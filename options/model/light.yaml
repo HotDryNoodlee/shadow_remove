@@ -1,5 +1,5 @@
 model_name: light
-gpu_ids: [0]
+gpu_ids: [4]
 lr: 0.0002
 beta1: 0.5
 beta2: 0.999
@@ -27,9 +27,12 @@ save_dir: /home/zwl/workspace/shadow_remove/result/light
 
 lr_policy: 'linear'
 epoch_count: 1
-n_epoch: 200
-n_epoch_decay: 200
+n_epoch: 20
+n_epoch_decay: 10
 lr_decay_iters: 5
+
+
+use_mask: True
 
 testset:
   dataset_name: light
@@ -40,7 +43,7 @@ testset:
   dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
   phase: test
   max_dataset_size: 100
-  use_mask: False
+  use_mask: True
   loadsize: 256
 
 trainset:
@@ -51,6 +54,6 @@ trainset:
   shuffle: true
   dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
   phase: train
-  max_dataset_size: 2000
-  use_mask: False
+  max_dataset_size: 100
+  use_mask: True
   loadsize: 256
