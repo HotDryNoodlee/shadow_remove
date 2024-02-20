@@ -1,7 +1,8 @@
+*.pyc
 /datasets/
 /checkpoint/
 /outputs/
 /result/
 /.hydra/
 /train.log
-**/__pycache__/
+
