@@ -9,6 +9,8 @@ from util.util import tensor2im
 import cv2
 from PIL import Image
 import torchvision.transforms as transforms
+from skimage import io
+import numpy as np
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
@@ -169,8 +171,8 @@ class BaseModel(ABC):
         images = self.get_current_visuals()
         save_path = os.path.join(self.opt.save_dir, "images")
         for key in images:
-            save_name = os.path.join(save_path, key+"_"+str(epoch)+".jpg")
-            cv2.imwrite(save_name, images[key])
+            save_name = os.path.join(save_path, key+"_"+str(epoch)+".png")
+            cv2.imwrite(save_name, (images[key]*255).astype(np.uint8))
 
 
 

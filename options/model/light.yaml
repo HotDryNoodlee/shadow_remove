@@ -37,23 +37,23 @@ use_mask: True
 testset:
   dataset_name: light
   isTrain: False
-  batch_size: 1
+  batch_size: 2
   num_threads: 0
   shuffle: true
   dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
   phase: test
-  max_dataset_size: 100
+  max_dataset_size: 10
   use_mask: True
   loadsize: 256
 
 trainset:
   dataset_name: light
   isTrain: True
-  batch_size: 1
+  batch_size: 2
   num_threads: 0
   shuffle: true
   dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
   phase: train
-  max_dataset_size: 100
+  max_dataset_size: 10
   use_mask: True
   loadsize: 256

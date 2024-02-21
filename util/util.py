@@ -64,17 +64,16 @@ def find_class_in_module(target_cls_name, module):
 #     return image_numpy.astype(imtype)
 
 def tensor2im(tensor):
-    labimg = tensor
-    c = labimg.size()[0]
-    h = labimg.size()[2]
-    w = labimg.size()[3]
-    labimg[:, 0, :, :] = 50.0*(labimg[:, 0, :, :]+1.0)
-    labimg[:, 1:,:] = 255.0*(labimg[:, 1:,:]+1.0)/2.0-128.0
+    labimg = tensor[0]
+    h = labimg.size()[1]
+    w = labimg.size()[2]
+    labimg[0, :, :] = 50.0*(labimg[0, :, :]+1.0)
+    labimg[1:,:, :] = 255.0*(labimg[1:,:, :]+1.0)/2.0-128.0
     labimg = labimg.cpu()
-    labimg = labimg.transpose(1, 3).transpose(1, 2).contiguous().numpy()
-    labimg = resize(labimg,(c,h,w,3))
-    labimg = labimg[0]
-    outputimag = color.lab2rgb(labimg)
+    labimg = labimg.transpose(0, 2).transpose(0, 1).contiguous().numpy()
+    labimg = resize(labimg,(h,w,3))
+    # import pdb;pdb.set_trace()
+    outputimag = cv2.cvtColor(labimg, cv2.COLOR_LAB2RGB)
     return outputimag
 
 def diagnose_network(net, name='network'):

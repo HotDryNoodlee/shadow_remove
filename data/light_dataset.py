@@ -76,12 +76,14 @@ class lightDataset(BaseDataset):
             F_path = self.F_paths[index % self.F_size]
             M_path = self.M_paths[index % self.M_size]
             
-            S_img = io.imread(S_path)
-            F_img = io.imread(F_path)
-            M_img = io.imread(M_path)
+            S_img = cv2.imread(S_path)
+            F_img = cv2.imread(F_path)
+            M_img = cv2.imread(M_path)
 
-            S_img = color.rgb2lab(S_img)
-            F_img = color.rgb2lab(F_img)
+            S_img = cv2.cvtColor(S_img, cv2.COLOR_BGR2RGB)
+            S_img = cv2.cvtColor(S_img, cv2.COLOR_RGB2LAB)
+            F_img = cv2.cvtColor(F_img, cv2.COLOR_BGR2RGB)
+            F_img = cv2.cvtColor(F_img, cv2.COLOR_RGB2LAB)
             
             # import pdb; pdb.set_trace()
             S_img = resize(S_img, (self.opt.loadsize, self.opt.loadsize, 3))
