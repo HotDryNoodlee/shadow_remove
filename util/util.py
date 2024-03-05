@@ -73,7 +73,7 @@ def tensor2im(tensor):
     labimg = labimg.transpose(0, 2).transpose(0, 1).contiguous().numpy()
     labimg = resize(labimg,(h,w,3))
     # import pdb;pdb.set_trace()
-    outputimag = cv2.cvtColor(labimg, cv2.COLOR_LAB2RGB)
+    outputimag = color.lab2rgb(labimg)
     return outputimag
 
 def diagnose_network(net, name='network'):
@@ -178,3 +178,34 @@ def correct_resize(t, size, mode=Image.BICUBIC):
         resized_t = torchvision.transforms.functional.to_tensor(one_image) * 2 - 1.0
         resized.append(resized_t)
     return torch.stack(resized, dim=0).to(device)
+
+
+
+def psnr(img1, img2):
+    mse = np.mean((img1 - img2) ** 2)
+    if mse == 0:
+        return float('inf')
+    max_pixel = 255.0
+    psnr_val = 20 * np.log10(max_pixel / np.sqrt(mse))
+    return psnr_val
+
+def ssim(img1, img2):
+    # Ensure the images are of the same shape and type
+    img1 = img1.astype(np.float64)
+    img2 = img2.astype(np.float64)
+    # Constants for SSIM calculation
+    C1 = (0.01 * 255) ** 2
+    C2 = (0.03 * 255) ** 2
+    # Mean of the images
+    mean1 = cv2.GaussianBlur(img1, (11, 11), 1.5)
+    mean2 = cv2.GaussianBlur(img2, (11, 11), 1.5)
+    # Covariance and standard deviation of the images
+    cov12 = np.mean((img1 * img2)) - np.mean(img1) * np.mean(img2)
+    var1 = np.var(img1)
+    var2 = np.var(img2)
+    # SSIM calculation
+    ssim_val = ((2 * mean1 * mean2 + C1) * (2 * cov12 + C2)) / ((mean1 ** 2 + mean2 ** 2 + C1) * (var1 + var2 + C2))
+    return np.mean(ssim_val)
+
+def rmse(img1, img2):
+    return np.sqrt(np.mean((img1 - img2) ** 2))

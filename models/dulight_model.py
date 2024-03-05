@@ -5,7 +5,7 @@ from . import networks
 import util.util as util
 
 
-class LIGHTModel(BaseModel):
+class DULIGHTModel(BaseModel):
 
     def __init__(self, opt):
         BaseModel.__init__(self, opt)
@@ -50,7 +50,6 @@ class LIGHTModel(BaseModel):
         self.real_F = input['F'].cuda()
         self.name_S = input["S_paths"]
         self.name_F = input["F_paths"]
-        self.name_M = input["M_paths"]
 
         if self.opt.use_mask:
             self.mask = input['M'].cuda()
@@ -62,7 +61,6 @@ class LIGHTModel(BaseModel):
         self.zero_mask = torch.zeros_like(self.mask, dtype=self.mask.dtype)
         # import pdb; pdb.set_trace()
         self.fake_F = self.netG(self.real_S, self.mask)
-        # self.fake_F = self.real_S
         self.idt_F = self.netG(self.real_F, self.zero_mask)
         return self.fake_F
 

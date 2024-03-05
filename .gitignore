@@ -7,3 +7,9 @@
 /.hydra/
 /train.log
 
+srd_cl_output.json
+models/__pycache__/__init__.cpython-311.pyc
+models/__pycache__/base_model.cpython-311.pyc
+models/__pycache__/networks.cpython-311.pyc
+util/__pycache__/__init__.cpython-311.pyc
+util/__pycache__/util.cpython-311.pyc

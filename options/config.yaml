@@ -1,5 +1,5 @@
 runtime:
-  eval_frqe: 1
+  eval_frqe: 5
 
 hydra:
   run:

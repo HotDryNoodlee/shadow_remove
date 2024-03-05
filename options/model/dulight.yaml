@@ -1,0 +1,59 @@
+model_name: dulight
+gpu_ids: [0, 1, 2, 3]
+lr: 0.0001
+beta1: 0.5
+beta2: 0.999
+direction: StoF
+
+input_nc: 4
+output_nc: 3
+no_dropout: True
+init_type: xavier # choices=['normal', 'xavier', 'kaiming', 'orthogonal']
+init_gain: 0.02
+no_antialias: False
+no_antialias_up: False
+
+netG: dulight_blocks
+normG: instance # choices=['instance', 'batch', 'none']
+
+
+isTrain: True
+continue_train: False
+epoch: 0
+verbose: 
+pretrained_name: None
+checkpoints_dir: ./result/dulight/checkpoint
+save_dir: ./result/dulight
+
+lr_policy: 'cosine'
+epoch_count: 1
+n_epoch: 100
+n_epoch_decay: 0
+lr_decay_iters: 5
+
+
+use_mask: True
+
+testset:
+  dataset_name: light
+  isTrain: False
+  batch_size: 1
+  num_threads: 24
+  shuffle: true
+  dataroot: ./datasets/ISTD_Dataset
+  phase: test
+  max_dataset_size: 100
+  use_mask: True
+  loadsize: 512
+
+trainset:
+  dataset_name: light
+  isTrain: True
+  batch_size: 16
+  num_threads: 24
+  shuffle: true
+  dataroot: ./datasets/ISTD_Dataset
+  phase: train
+  max_dataset_size: 10000
+  use_mask: True
+  loadsize: 512

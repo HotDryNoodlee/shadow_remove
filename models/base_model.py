@@ -23,7 +23,7 @@ class BaseModel(ABC):
     """
     def __init__(self, opt):
         self.opt = opt
-        self.device = torch.device('cuda:{}'.format(self.opt.gpu_ids[0])) if self.opt.gpu_ids else torch.device('cpu') 
+        # self.device = torch.device('cuda:{}'.format(self.opt.gpu_ids[0])) if self.opt.gpu_ids else torch.device('cpu') 
         self.loss_names = []
         self.model_names = []
         self.optimizers = []
@@ -53,18 +53,13 @@ class BaseModel(ABC):
         pass
 
     def setup(self):
-        """Load and print networks; create schedulers
-
-        Parameters:
-            opt (Option class) -- stores all the experiment flags; needs to be a subclass of BaseOptions
-        """
-        if self.opt.isTrain:
-            self.schedulers = [networks.get_scheduler(optimizer, self.opt) for optimizer in self.optimizers]
+        # import pdb;pdb.set_trace()
+        self.schedulers = [networks.get_scheduler(optimizer, self.opt) for optimizer in self.optimizers]
         if not self.opt.isTrain or self.opt.continue_train:
             load_suffix = self.opt.epoch
             self.load_networks(load_suffix)
 
-        # self.print_networks(self.opt.verbose)
+        
 
     def load_networks(self, epoch):
         """Load all the networks from the disk.
@@ -115,21 +110,27 @@ class BaseModel(ABC):
         print('-----------------------------------------------')
 
 
-    def save_networks(self, epoch):
+    def save_networks(self, data_name, epoch):
         """Save all the networks to the disk.
 
         Parameters:
             epoch (int) -- current epoch; used in the file name '%s_net_%s.pth' % (epoch, name)
         """
+        for filename in os.listdir(self.opt.checkpoints_dir):
+            if filename.endswith('.pth'):
+            # 构造文件的完整路径
+                file_path = os.path.join(self.opt.checkpoints_dir, filename)
+                # 删除文件
+                os.remove(file_path)
         for name in self.model_names:
             if isinstance(name, str):
-                save_filename = '%s_net_%s.pth' % (epoch, name)
+                save_filename = '%s_%s_net_%s.pth' % (data_name, epoch, name)
                 save_path = os.path.join(self.opt.checkpoints_dir, save_filename)
                 net = getattr(self, 'net' + name)
 
                 if len(self.opt.gpu_ids) > 0 and torch.cuda.is_available():
-                    torch.save(net.module.cpu().state_dict(), save_path)
-                    net.cuda(self.opt.gpu_ids[0])
+                    torch.save(net.cpu().state_dict(), save_path)
+                    net.cuda()
                 else:
                     torch.save(net.cpu().state_dict(), save_path)
 
@@ -153,7 +154,7 @@ class BaseModel(ABC):
     
 
     def get_current_lr(self):
-        return [scheduler.get_last_lr()  for scheduler in self.schedulers]
+        return [scheduler.get_last_lr() for scheduler in self.schedulers]
     
 
     def get_current_visuals(self):
@@ -164,15 +165,16 @@ class BaseModel(ABC):
         for key in image:
             # import pdb; pdb.set_trace()
             image[key] = tensor2im(image[key])
+            image[key] = (image[key]*255).astype(np.uint8)
         return image
 
 
-    def save_current_images(self, epoch):
-        images = self.get_current_visuals()
-        save_path = os.path.join(self.opt.save_dir, "images")
-        for key in images:
-            save_name = os.path.join(save_path, key+"_"+str(epoch)+".png")
-            cv2.imwrite(save_name, (images[key]*255).astype(np.uint8))
+    # def save_current_images(self, epoch):
+    #     images = self.get_current_visuals()
+    #     save_path = os.path.join(self.opt.save_dir, "images")
+    #     for key in images:
+    #         save_name = os.path.join(save_path, key+"_"+str(epoch)+".jpg")
+    #         io.imsave(save_name, (images[key]*255).astype(np.uint8))
 
 
 
@@ -194,7 +196,7 @@ class BaseModel(ABC):
         for name in self.model_names:
             if isinstance(name, str):
                 net = getattr(self, 'net' + name)
-                setattr(self, 'net' + name, torch.nn.DataParallel(net, self.opt.gpu_ids))
+                setattr(self, 'net' + name, net.cuda())
 
     def set_requires_grad(self, nets, requires_grad=False):
         """Set requies_grad=Fasle for all the networks to avoid unnecessary computations

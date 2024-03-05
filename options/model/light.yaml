@@ -1,7 +1,7 @@
 model_name: light
-gpu_ids: [4]
+gpu_ids: [0, 1, 2, 3]
 lr: 0.0002
-beta1: 0.5
+beta1: 0.9
 beta2: 0.999
 direction: StoF
 
@@ -22,13 +22,13 @@ continue_train: False
 epoch: 0
 verbose: 
 pretrained_name: None
-checkpoints_dir: /home/zwl/workspace/shadow_remove/result/light
-save_dir: /home/zwl/workspace/shadow_remove/result/light
+checkpoints_dir: ./result/light/checkpoint
+save_dir: ./result/light
 
-lr_policy: 'linear'
+lr_policy: 'cosine'
 epoch_count: 1
-n_epoch: 20
-n_epoch_decay: 10
+n_epoch: 100
+n_epoch_decay: 0
 lr_decay_iters: 5
 
 
@@ -37,23 +37,23 @@ use_mask: True
 testset:
   dataset_name: light
   isTrain: False
-  batch_size: 2
-  num_threads: 0
+  batch_size: 1
+  num_threads: 24
   shuffle: true
-  dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
+  dataroot: ./datasets/srd
   phase: test
-  max_dataset_size: 10
+  max_dataset_size: 1000
   use_mask: True
   loadsize: 256
 
 trainset:
   dataset_name: light
   isTrain: True
-  batch_size: 2
-  num_threads: 0
+  batch_size: 32
+  num_threads: 64
   shuffle: true
-  dataroot: /home/zwl/workspace/shadow_remove/datasets/srd
+  dataroot: ./datasets/srd
   phase: train
-  max_dataset_size: 10
+  max_dataset_size: 10000
   use_mask: True
   loadsize: 256
